@@ -282,6 +282,11 @@
                       
                     
                     
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
                   
                   <div class="md-sidebar__inner">
                     
@@ -293,6 +298,69 @@
   
     
   
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Usage
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#update-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Update workflow
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#moving-away-from-symlinks" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Moving away from symlinks
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Requirements
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#development" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Development
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -318,7 +386,74 @@
 
 
 <h1 id="skillmod">Skillmod<a class="headerlink" href="#skillmod" title="Permanent link">&para;</a></h1>
-<p>module to update skills from skills repo</p>
+<p>CBC module for installing approved skills as ordinary files with <strong><code>sup</code></strong>
+(short for “skill-update”).</p>
+<h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
+<p>Load this module through CBC, or source it directly in Bash:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">source</span><span class="w"> </span>/path/to/skillmod/cbc-module.sh
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>sup
+</span></code></pre></div>
+<p><code>sup</code> takes no arguments. It installs into <code>~/.agents/skills/</code> and reports
+the GitHub <code>main</code> commit used for the update.</p>
+<h2 id="update-workflow">Update workflow<a class="headerlink" href="#update-workflow" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Check <code>~/Documents/github_repositories/skills</code> for a checkout whose
+   <code>origin</code> matches <a href="https://github.com/iop098321qwe/skills.git">https://github.com/iop098321qwe/skills.git</a>.</li>
+<li>If needed, search the home directory for matching checkouts, skipping
+   <code>.git</code>, <code>.cache</code>, <code>node_modules</code>, <code>.venv</code>, and <code>.Trash</code> contents. The
+   search does not follow symlinks. Multiple matches or an incomplete
+   search cause an error.</li>
+<li>If none exists, create the parent directory and clone GitHub <code>main</code>
+   into the expected path. An occupied destination is never overwritten.</li>
+<li>Fetch <code>main</code> directly from the canonical GitHub HTTPS URL and export
+   that exact commit to a temporary directory. A failed fetch aborts the
+   update; there is no fallback to an older local branch.</li>
+<li>Install top-level directories containing <code>SKILL.md</code>, including their
+   supporting files, hidden files, and executable permissions.</li>
+</ol>
+<p>The local checkout's branch, uncommitted edits, untracked files, and
+unpushed commits are not used as installation content. The command does
+not switch branches or update local branches. Fetching does update Git's
+object database and <code>FETCH_HEAD</code>.</p>
+<p>Matching destination files are overwritten. Destination-only files and
+skills absent from the repository are preserved, including skills removed
+from <code>main</code>. User-managed <code>todo.txt</code> files are excluded from exports and
+copies. No deletion-based mirror operation is performed.</p>
+<h2 id="moving-away-from-symlinks">Moving away from symlinks<a class="headerlink" href="#moving-away-from-symlinks" title="Permanent link">&para;</a></h2>
+<p>The first <code>sup</code> run replaces installed skill symlinks with ordinary
+directories when their names match skill packages on GitHub <code>main</code>. Their
+original targets are not modified or copied, so local work-in-progress
+cannot enter the installation through those links.</p>
+<p>Unrelated skill symlinks, such as Omarchy-managed skills, remain untouched.
+Nested destination links that conflict with approved files or directories
+are replaced without writing through to their targets.</p>
+<p>The installation roots (<code>~/.agents</code> and <code>~/.agents/skills</code>) must be real
+directories. Source skill symlinks are rejected before installation to
+avoid copying content from outside the approved export. An ordinary file
+blocking a skill directory is also reported as an error.</p>
+<h2 id="requirements">Requirements<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Bash, Git, <code>find</code>, <code>tar</code>, <code>rsync</code>, <code>mktemp</code>, <code>mkdir</code>, and <code>rm</code>.</li>
+<li>Network access to the GitHub repository when running <code>sup</code>.</li>
+<li>A writable home directory; paths containing spaces are supported.</li>
+</ul>
+<p>The function runs in a subshell to isolate its shell options and cleanup
+traps from your interactive shell. Temporary export files are cleaned up
+when it exits. Copy failures return a nonzero status; updates are not
+transactional across all skills, so rerun after resolving the failure.</p>
+<h2 id="development">Development<a class="headerlink" href="#development" title="Permanent link">&para;</a></h2>
+<p>Run syntax checks and the isolated integration tests:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>bash<span class="w"> </span>-n<span class="w"> </span>cbc-module.sh<span class="w"> </span>tests/sup.sh
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>npm<span class="w"> </span><span class="nb">test</span>
+</span></code></pre></div>
+<p>Alternatively, run <code>bash tests/sup.sh</code> without npm. Tests use temporary
+home directories and a local Git upstream instead of your real skills or
+GitHub. They exercise cloning, discovery, <code>main</code> isolation, symlink
+conversion, overwrite behavior, preservation, and error handling.</p>
+<p><code>npm install</code> installs the repository's Husky and commitlint development
+tooling. Use Conventional Commits. Documentation sources are linked into
+<code>docs/</code>; <code>.github/workflows/docs.yml</code> builds and deploys the site with
+Zensical on pushes to <code>main</code> and <code>master</code>.</p>
 
 
 
