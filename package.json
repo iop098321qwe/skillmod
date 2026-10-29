@@ -4,7 +4,7 @@
   "description": "module to update skills from skills repo",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "bash tests/sup.sh",
     "prepare": "husky"
   },
   "repository": {
