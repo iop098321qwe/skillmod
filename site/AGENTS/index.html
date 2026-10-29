@@ -545,12 +545,16 @@ work. Source files and tooling configuration define actual behavior.</p>
 <ul>
 <li>Read <code>README.md</code> and run <code>git status --short --branch</code> before editing.</li>
 <li>Source <code>cbc-module.sh</code> in Bash to expose <code>sup</code>.</li>
-<li>Run <code>bash -n cbc-module.sh tests/sup.sh</code> and <code>bash tests/sup.sh</code>.</li>
+<li>Run <code>bash -n cbc-module.sh tests/sup.sh tests/ble.sh</code> and <code>npm test</code>.</li>
 <li>Run <code>git diff --stat</code> before committing.</li>
 </ul>
 <h2 id="environment">Environment<a class="headerlink" href="#environment" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Runtime commands: Bash, Git, find, tar, rsync, mktemp, mkdir, and rm.</li>
+<li>Gum is optional for progress and summaries; util-linux <code>script</code> enables
+  pseudo-terminal spinner tests.</li>
+<li>Optional ble.sh integration tests use <code>/usr/share/blesh/ble.sh</code>, or
+  <code>SKILLMOD_TEST_BLE_PATH</code>, with isolated home/cache/runtime directories.</li>
 <li><code>HOME</code> determines repository discovery and installation paths.</li>
 <li><code>TMPDIR</code>, when set, selects the temporary export parent directory.</li>
 <li>Node.js and npm are needed only for commitlint and Husky tooling.</li>
@@ -570,6 +574,7 @@ work. Source files and tooling configuration define actual behavior.</p>
 <li><code>.gitignore</code>: local dependency and environment exclusions.</li>
 <li><code>.husky/commit-msg</code>: commitlint hook.</li>
 <li><code>AGENTS.md</code>: repository agent instructions.</li>
+<li><code>CHANGELOG.md</code>: generated release history; never edit manually.</li>
 <li><code>LICENSE</code>: GPL license text.</li>
 <li><code>README.md</code>: command usage, behavior, and development setup.</li>
 <li><code>cbc-module.sh</code>: sourceable Bash <code>sup</code> function.</li>
@@ -581,6 +586,7 @@ work. Source files and tooling configuration define actual behavior.</p>
 <li><code>package-lock.json</code>: npm dependency lockfile.</li>
 <li><code>package.json</code>: test command and development tooling dependencies.</li>
 <li><code>site/</code>: generated output; individual files are intentionally omitted.</li>
+<li><code>tests/ble.sh</code>: attached ble.sh interactive test driver.</li>
 <li><code>tests/sup.sh</code>: temporary-home and local-upstream integration tests.</li>
 <li><code>todo.txt</code>: user-managed task file; agents must not access it.</li>
 <li><code>zensical.toml</code>: documentation site configuration.</li>
@@ -588,6 +594,22 @@ work. Source files and tooling configuration define actual behavior.</p>
 <h2 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>sup</code> runs in a subshell with isolated options, helpers, and traps.</li>
+<li>Use builtin <code>read</code>, <code>trap</code>, and <code>exit</code> internally so interactive shell
+  wrappers cannot change EOF handling or lose cleanup/reporting state.</li>
+<li>Validate the expected checkout before searching; report invalid paths
+  directly instead of silently falling through to discovery.</li>
+<li>Gum wraps interactive stages and styles the final result; use plain
+  progress and summaries when unavailable or output is redirected.</li>
+<li>Pass stage data as arguments; retain NUL-delimited search results,
+  itemized rsync reports, and completed-package counts in temporary files.</li>
+<li>Suppress successful command chatter; replay diagnostics on failure and
+  report the failed stage and possible partial installation on exit.</li>
+<li>Confirm Gum worker completion and exit status independently of the
+  spinner; report silent failures with an explicit status and explanation.</li>
+<li>Treat verified unchanged installations as success and explicitly report
+  that no updates are needed; never infer this from a failed stage.</li>
+<li>Distinguish changed and unchanged packages using rsync itemization and
+  directory/link replacements, not the number of packages visited.</li>
 <li>Discover a matching origin or clone the canonical skills repository.</li>
 <li>Fetch GitHub <code>main</code>, pin its commit, and export only skill packages.</li>
 <li>Exclude user-managed <code>todo.txt</code> files from exports and copies.</li>
@@ -599,7 +621,7 @@ work. Source files and tooling configuration define actual behavior.</p>
 <ul>
 <li><code>source cbc-module.sh</code>: expose <code>sup</code> in the current Bash shell.</li>
 <li><code>sup</code>: fetch and install approved skills; mutates the real installation.</li>
-<li><code>bash -n cbc-module.sh tests/sup.sh</code>: validate shell syntax.</li>
+<li><code>bash -n cbc-module.sh tests/sup.sh tests/ble.sh</code>: validate shell syntax.</li>
 <li><code>bash tests/sup.sh</code> or <code>npm test</code>: run integration tests.</li>
 <li><code>npm install</code>: install commitlint and configure Husky.</li>
 <li><code>zensical build --clean</code>: regenerate documentation with Zensical.</li>
@@ -610,6 +632,14 @@ work. Source files and tooling configuration define actual behavior.</p>
   URL to a local upstream through an isolated Git configuration.</li>
 <li>Verify main-only content, discovery, cloning, updates, permissions,
   symlink conversion, preservation, failure paths, and temporary cleanup.</li>
+<li>Cover expected-path priority, validation diagnostics, spinner result and
+  failure propagation, and missing-Gum/non-interactive fallbacks.</li>
+<li>Verify changed, unchanged, and mixed result counts, failure summaries,
+  and install-stage diagnostics without falsely reporting success.</li>
+<li>Cover silent spinner failures, missing worker completion, masked worker
+  failures, and successful no-update messages in plain and terminal output.</li>
+<li>Verify wrapper isolation and nonempty failure stage/destination fields;
+  run attached ble.sh checks when the local installation is available.</li>
 <li>Never test against the real installation without explicit user intent.</li>
 </ul>
 <h2 id="linting-and-formatting">Linting and Formatting<a class="headerlink" href="#linting-and-formatting" title="Permanent link">&para;</a></h2>
@@ -659,9 +689,13 @@ work. Source files and tooling configuration define actual behavior.</p>
 <li>A failed fetch must abort without falling back to stale local content.</li>
 <li>For ambiguous discovery, place the intended checkout at the expected
   path documented in <code>README.md</code>.</li>
+<li>Fix reported Git or origin validation errors at the expected path;
+  incomplete searches retain filesystem error details.</li>
 <li>Resolve occupied clone paths, linked roots, source links, and file
   conflicts before retrying. Copy failures may leave partial updates.</li>
 <li>Edit root Markdown sources, not their <code>docs/</code> symlinks or generated site.</li>
+<li>CBC can load an older installed module; source the intended checkout's
+  <code>cbc-module.sh</code> directly when verifying uninstalled changes.</li>
 </ul>
 <h2 id="refining-existing-agentsmd">Refining Existing AGENTS.md<a class="headerlink" href="#refining-existing-agentsmd" title="Permanent link">&para;</a></h2>
 <ul>

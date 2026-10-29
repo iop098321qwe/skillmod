@@ -328,6 +328,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#progress-and-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Progress and results
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installation-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Installation behavior
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#moving-away-from-symlinks" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -354,6 +376,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Development
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting-shell-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Troubleshooting shell integration
       </span>
     </span>
   </a>
@@ -398,8 +431,10 @@ the GitHub <code>main</code> commit used for the update.</p>
 <h2 id="update-workflow">Update workflow<a class="headerlink" href="#update-workflow" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Check <code>~/Documents/github_repositories/skills</code> for a checkout whose
-   <code>origin</code> matches <a href="https://github.com/iop098321qwe/skills.git">https://github.com/iop098321qwe/skills.git</a>.</li>
-<li>If needed, search the home directory for matching checkouts, skipping
+   <code>origin</code> matches <a href="https://github.com/iop098321qwe/skills.git">https://github.com/iop098321qwe/skills.git</a>. Use it
+   immediately if valid, without searching the home directory. If that
+   path exists but is invalid, report the validation error and stop.</li>
+<li>If the expected path is absent, search for matching checkouts, skipping
    <code>.git</code>, <code>.cache</code>, <code>node_modules</code>, <code>.venv</code>, and <code>.Trash</code> contents. The
    search does not follow symlinks. Multiple matches or an incomplete
    search cause an error.</li>
@@ -411,6 +446,41 @@ the GitHub <code>main</code> commit used for the update.</p>
 <li>Install top-level directories containing <code>SKILL.md</code>, including their
    supporting files, hidden files, and executable permissions.</li>
 </ol>
+<p>Repository validation resolves physical paths and accepts HTTPS or SSH
+origins, with or without a trailing slash.</p>
+<h2 id="progress-and-results">Progress and results<a class="headerlink" href="#progress-and-results" title="Permanent link">&para;</a></h2>
+<p>In interactive terminals, <code>sup</code> uses Gum spinners for checkout validation,
+fallback discovery, cloning, fetching, export preparation, and installation.
+Successful stages omit raw Git output and per-skill chatter. If a stage
+fails, its diagnostics are shown along with a failure summary naming the
+stage. The summary states whether installation has started and may be
+partially applied, including how many skills completed.</p>
+<p>Every successful run ends with a result summary:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Skills updated successfully
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>Skills: 7 processed · 2 changed · 5 unchanged
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>Destination: /home/user/.agents/skills
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>Repository: /home/user/Documents/github_repositories/skills
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>Source: main @ &lt;full commit hash&gt;
+</span></code></pre></div>
+<p>If all installed packages match, the heading is <strong>Skills already up to
+date</strong>, followed by <strong>No updates needed. Your installed skills already
+match the approved main branch.</strong> This is a successful check (exit status
+0), not an update failure.</p>
+<p>Counts describe packages, not individual files: rsync's itemized
+content or metadata changes mark a package as changed, as do new package
+directories and replaced skill symlinks. Unrelated skills are not counted.</p>
+<p>Gum styles the final summary when available. If Gum is missing or output
+is redirected, the same information is printed as plain text with one
+progress line per stage. Search results and installation counts stay in
+temporary files independently of spinner output. Styling failures fall
+back to plain text without changing the update result.</p>
+<p>Failures include an exit status as well as the stage name. If the stage
+provides no diagnostic output, the result explicitly says so. Gum stages
+must record worker completion independently of the spinner's own exit
+status; missing completion or a failed worker stops the update. A failure
+never uses the no-updates message to explain an unverified installation.</p>
+<h2 id="installation-behavior">Installation behavior<a class="headerlink" href="#installation-behavior" title="Permanent link">&para;</a></h2>
 <p>The local checkout's branch, uncommitted edits, untracked files, and
 unpushed commits are not used as installation content. The command does
 not switch branches or update local branches. Fetching does update Git's
@@ -434,26 +504,43 @@ blocking a skill directory is also reported as an error.</p>
 <h2 id="requirements">Requirements<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Bash, Git, <code>find</code>, <code>tar</code>, <code>rsync</code>, <code>mktemp</code>, <code>mkdir</code>, and <code>rm</code>.</li>
+<li>Optional: <code>gum</code> for interactive stage spinners and styled result summaries.</li>
 <li>Network access to the GitHub repository when running <code>sup</code>.</li>
 <li>A writable home directory; paths containing spaces are supported.</li>
 </ul>
 <p>The function runs in a subshell to isolate its shell options and cleanup
-traps from your interactive shell. Temporary export files are cleaned up
-when it exits. Copy failures return a nonzero status; updates are not
+traps from your interactive shell. Internal file reads and cleanup use
+Bash's builtin <code>read</code>, <code>trap</code>, and <code>exit</code>, bypassing interactive wrappers
+such as ble.sh without changing those wrappers in your shell. Temporary
+export files are cleaned up when it exits. Copy failures return a nonzero
+status; updates are not
 transactional across all skills, so rerun after resolving the failure.</p>
 <h2 id="development">Development<a class="headerlink" href="#development" title="Permanent link">&para;</a></h2>
 <p>Run syntax checks and the isolated integration tests:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>bash<span class="w"> </span>-n<span class="w"> </span>cbc-module.sh<span class="w"> </span>tests/sup.sh
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>npm<span class="w"> </span><span class="nb">test</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>bash<span class="w"> </span>-n<span class="w"> </span>cbc-module.sh<span class="w"> </span>tests/sup.sh<span class="w"> </span>tests/ble.sh
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>npm<span class="w"> </span><span class="nb">test</span>
 </span></code></pre></div>
 <p>Alternatively, run <code>bash tests/sup.sh</code> without npm. Tests use temporary
 home directories and a local Git upstream instead of your real skills or
 GitHub. They exercise cloning, discovery, <code>main</code> isolation, symlink
-conversion, overwrite behavior, preservation, and error handling.</p>
+conversion, overwrite behavior, preservation, and error handling.
+Result tests cover changed, unchanged, and mixed-package counts, fetch
+failures before installation, and possible partial installation failures.
+Interactive spinner tests run in a pseudo-terminal when util-linux
+<code>script</code> is available; other tests run without it.
+With <code>script</code> and <code>/usr/share/blesh/ble.sh</code> installed, the suite also checks
+successful no-update runs and failure summaries in an attached ble.sh
+session. Set <code>SKILLMOD_TEST_BLE_PATH</code> to test a different ble.sh location.
+These checks use temporary home, cache, and runtime directories.</p>
 <p><code>npm install</code> installs the repository's Husky and commitlint development
 tooling. Use Conventional Commits. Documentation sources are linked into
 <code>docs/</code>; <code>.github/workflows/docs.yml</code> builds and deploys the site with
 Zensical on pushes to <code>main</code> and <code>master</code>.</p>
+<h2 id="troubleshooting-shell-integration">Troubleshooting shell integration<a class="headerlink" href="#troubleshooting-shell-integration" title="Permanent link">&para;</a></h2>
+<p>If you are testing changes from a repository checkout, source that
+checkout's <code>cbc-module.sh</code> directly. CBC may load a separate installed copy
+under <code>~/.config/cbc/modules/skillmod/</code>, so reloading CBC can restore an
+older function until the installed module is updated.</p>
 
 
 
