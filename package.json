@@ -1,6 +1,6 @@
 {
   "name": "skillmod",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "module to update skills from skills repo",
   "main": "index.js",
   "scripts": {
