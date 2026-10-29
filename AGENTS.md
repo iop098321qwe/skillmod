@@ -20,12 +20,16 @@ work. Source files and tooling configuration define actual behavior.
 
 - Read `README.md` and run `git status --short --branch` before editing.
 - Source `cbc-module.sh` in Bash to expose `sup`.
-- Run `bash -n cbc-module.sh tests/sup.sh` and `bash tests/sup.sh`.
+- Run `bash -n cbc-module.sh tests/sup.sh tests/ble.sh` and `npm test`.
 - Run `git diff --stat` before committing.
 
 ## Environment
 
 - Runtime commands: Bash, Git, find, tar, rsync, mktemp, mkdir, and rm.
+- Gum is optional for progress and summaries; util-linux `script` enables
+  pseudo-terminal spinner tests.
+- Optional ble.sh integration tests use `/usr/share/blesh/ble.sh`, or
+  `SKILLMOD_TEST_BLE_PATH`, with isolated home/cache/runtime directories.
 - `HOME` determines repository discovery and installation paths.
 - `TMPDIR`, when set, selects the temporary export parent directory.
 - Node.js and npm are needed only for commitlint and Husky tooling.
@@ -45,6 +49,7 @@ work. Source files and tooling configuration define actual behavior.
 - `.gitignore`: local dependency and environment exclusions.
 - `.husky/commit-msg`: commitlint hook.
 - `AGENTS.md`: repository agent instructions.
+- `CHANGELOG.md`: generated release history; never edit manually.
 - `LICENSE`: GPL license text.
 - `README.md`: command usage, behavior, and development setup.
 - `cbc-module.sh`: sourceable Bash `sup` function.
@@ -56,6 +61,7 @@ work. Source files and tooling configuration define actual behavior.
 - `package-lock.json`: npm dependency lockfile.
 - `package.json`: test command and development tooling dependencies.
 - `site/`: generated output; individual files are intentionally omitted.
+- `tests/ble.sh`: attached ble.sh interactive test driver.
 - `tests/sup.sh`: temporary-home and local-upstream integration tests.
 - `todo.txt`: user-managed task file; agents must not access it.
 - `zensical.toml`: documentation site configuration.
@@ -63,6 +69,22 @@ work. Source files and tooling configuration define actual behavior.
 ## Architecture
 
 - `sup` runs in a subshell with isolated options, helpers, and traps.
+- Use builtin `read`, `trap`, and `exit` internally so interactive shell
+  wrappers cannot change EOF handling or lose cleanup/reporting state.
+- Validate the expected checkout before searching; report invalid paths
+  directly instead of silently falling through to discovery.
+- Gum wraps interactive stages and styles the final result; use plain
+  progress and summaries when unavailable or output is redirected.
+- Pass stage data as arguments; retain NUL-delimited search results,
+  itemized rsync reports, and completed-package counts in temporary files.
+- Suppress successful command chatter; replay diagnostics on failure and
+  report the failed stage and possible partial installation on exit.
+- Confirm Gum worker completion and exit status independently of the
+  spinner; report silent failures with an explicit status and explanation.
+- Treat verified unchanged installations as success and explicitly report
+  that no updates are needed; never infer this from a failed stage.
+- Distinguish changed and unchanged packages using rsync itemization and
+  directory/link replacements, not the number of packages visited.
 - Discover a matching origin or clone the canonical skills repository.
 - Fetch GitHub `main`, pin its commit, and export only skill packages.
 - Exclude user-managed `todo.txt` files from exports and copies.
@@ -74,7 +96,7 @@ work. Source files and tooling configuration define actual behavior.
 
 - `source cbc-module.sh`: expose `sup` in the current Bash shell.
 - `sup`: fetch and install approved skills; mutates the real installation.
-- `bash -n cbc-module.sh tests/sup.sh`: validate shell syntax.
+- `bash -n cbc-module.sh tests/sup.sh tests/ble.sh`: validate shell syntax.
 - `bash tests/sup.sh` or `npm test`: run integration tests.
 - `npm install`: install commitlint and configure Husky.
 - `zensical build --clean`: regenerate documentation with Zensical.
@@ -85,6 +107,14 @@ work. Source files and tooling configuration define actual behavior.
   URL to a local upstream through an isolated Git configuration.
 - Verify main-only content, discovery, cloning, updates, permissions,
   symlink conversion, preservation, failure paths, and temporary cleanup.
+- Cover expected-path priority, validation diagnostics, spinner result and
+  failure propagation, and missing-Gum/non-interactive fallbacks.
+- Verify changed, unchanged, and mixed result counts, failure summaries,
+  and install-stage diagnostics without falsely reporting success.
+- Cover silent spinner failures, missing worker completion, masked worker
+  failures, and successful no-update messages in plain and terminal output.
+- Verify wrapper isolation and nonempty failure stage/destination fields;
+  run attached ble.sh checks when the local installation is available.
 - Never test against the real installation without explicit user intent.
 
 ## Linting and Formatting
@@ -134,9 +164,13 @@ work. Source files and tooling configuration define actual behavior.
 - A failed fetch must abort without falling back to stale local content.
 - For ambiguous discovery, place the intended checkout at the expected
   path documented in `README.md`.
+- Fix reported Git or origin validation errors at the expected path;
+  incomplete searches retain filesystem error details.
 - Resolve occupied clone paths, linked roots, source links, and file
   conflicts before retrying. Copy failures may leave partial updates.
 - Edit root Markdown sources, not their `docs/` symlinks or generated site.
+- CBC can load an older installed module; source the intended checkout's
+  `cbc-module.sh` directly when verifying uninstalled changes.
 
 ## Refining Existing AGENTS.md
 
