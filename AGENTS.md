@@ -2,137 +2,154 @@
 
 ## Purpose
 
-This file guides AI coding agents working in `skillmod`.
-All work must follow best practices and industry standards where
-applicable.
+Guide AI coding agents working in `skillmod`. All work must follow best
+practices and industry standards where applicable.
 
 ## Scope
 
-This file covers repository-wide expectations for code, docs, and git
-work.
-It does not replace verified instructions in source files, tooling
-configs,
-or release automation.
+These instructions cover repository code, documentation, tests, and Git
+work. Source files and tooling configuration define actual behavior.
 
 ## Formatting Rules
 
 - Keep lines at 80 characters or fewer when practical.
-- Allow longer lines only for URLs, code blocks, hashes, or commands
-  that cannot be wrapped cleanly.
+- Longer URLs, hashes, code blocks, and unbreakable commands are allowed;
+  identify any other necessary exception inline.
 
 ## Quick Start
 
-- Read `README.md` first for project context and setup notes.
-- Run `git status --short --branch` before editing to confirm repo
-  state.
-- Run `git diff --stat` before committing to review the change scope.
-- Verification needed: add authoritative setup, run, or build
-  commands when this repository defines them.
+- Read `README.md` and run `git status --short --branch` before editing.
+- Source `cbc-module.sh` in Bash to expose `sup`.
+- Run `bash -n cbc-module.sh tests/sup.sh` and `bash tests/sup.sh`.
+- Run `git diff --stat` before committing.
 
 ## Environment
 
-- Git is required for day-to-day work in this repository.
-- Verification needed: document runtime versions, package managers,
-  and env vars when they exist.
+- Runtime commands: Bash, Git, find, tar, rsync, mktemp, mkdir, and rm.
+- `HOME` determines repository discovery and installation paths.
+- `TMPDIR`, when set, selects the temporary export parent directory.
+- Node.js and npm are needed only for commitlint and Husky tooling.
+- Verification needed: minimum runtime versions are not pinned.
 
 ## Repository Overview
 
-- Root files hold the initial project overview, license, and repo
-  policies.
-- Verification needed: add top-level directories here when the repo
-  grows.
+- `cbc-module.sh` implements the CBC command `sup`.
+- `tests/` contains isolated shell integration tests.
+- `docs/` links root Markdown sources into the documentation tree.
+- `site/` contains tracked generated documentation output.
+- `.github/` and `.husky/` hold deployment and commit automation.
 
 ## Tracked Files Overview
 
-- `AGENTS.md`: AI coding agent instructions for this repository.
-- `cbc-module.sh`: CBC module entrypoint and shell workflow functions.
-- `done.txt`: Root completed task list placeholder for bootstrap workflows.
-- `inbox.txt.tuxedo-lock`: Blank Tuxedo inbox lock file created alongside todo.txt.
-- `LICENSE`: Project license text.
-- `README.md`: Primary repository overview and setup notes.
-- `todo.txt`: Root task list placeholder for bootstrap workflows.
+- `.github/workflows/docs.yml`: Zensical build and Pages deployment.
+- `.gitignore`: local dependency and environment exclusions.
+- `.husky/commit-msg`: commitlint hook.
+- `AGENTS.md`: repository agent instructions.
+- `LICENSE`: GPL license text.
+- `README.md`: command usage, behavior, and development setup.
+- `cbc-module.sh`: sourceable Bash `sup` function.
+- `commitlint.config.cjs`: Conventional Commits preset.
+- `docs/AGENTS.md`: symlink to root agent instructions.
+- `docs/README.md`: symlink to root README.
+- `done.txt`: completed-task placeholder.
+- `inbox.txt.tuxedo-lock`: task-tool lock placeholder.
+- `package-lock.json`: npm dependency lockfile.
+- `package.json`: test command and development tooling dependencies.
+- `site/`: generated output; individual files are intentionally omitted.
+- `tests/sup.sh`: temporary-home and local-upstream integration tests.
+- `todo.txt`: user-managed task file; agents must not access it.
+- `zensical.toml`: documentation site configuration.
 
 ## Architecture
 
-- This repository starts from a minimal scaffold and may not define
-  subsystems yet.
-- Verification needed: describe components, boundaries, and data flow
-  after they are introduced.
+- `sup` runs in a subshell with isolated options, helpers, and traps.
+- Discover a matching origin or clone the canonical skills repository.
+- Fetch GitHub `main`, pin its commit, and export only skill packages.
+- Exclude user-managed `todo.txt` files from exports and copies.
+- Merge approved files into `~/.agents/skills/` using rsync checksums.
+- Replace matching destination links; preserve unrelated skills and
+  destination-only files. Never switch the source checkout's branch.
 
 ## Commands
 
-- `git status --short --branch`: show the current branch and worktree
-  state.
-- `git diff --stat`: review the size and spread of pending changes.
-- `git log --oneline --decorate -5`: inspect recent commit history.
-- Verification needed: document authoritative build, run, lint, and
-  task commands when the repository defines them.
+- `source cbc-module.sh`: expose `sup` in the current Bash shell.
+- `sup`: fetch and install approved skills; mutates the real installation.
+- `bash -n cbc-module.sh tests/sup.sh`: validate shell syntax.
+- `bash tests/sup.sh` or `npm test`: run integration tests.
+- `npm install`: install commitlint and configure Husky.
+- `zensical build --clean`: regenerate documentation with Zensical.
 
 ## Testing
 
-- Verification needed: add test commands and expectations when tests
-  exist.
-- Do not claim coverage, test gates, or suites that are not verified.
+- Tests create temporary homes and repositories and rewrite the GitHub
+  URL to a local upstream through an isolated Git configuration.
+- Verify main-only content, discovery, cloning, updates, permissions,
+  symlink conversion, preservation, failure paths, and temporary cleanup.
+- Never test against the real installation without explicit user intent.
 
 ## Linting and Formatting
 
-- Verification needed: add formatter and linter commands after they
-  are introduced.
-- Keep changes minimal and consistent with the existing code style.
+- Use Bash syntax checks and `git diff --check` before committing.
+- `commitlint.config.cjs` extends the Conventional Commits preset.
+- No shell formatter or ShellCheck dependency is configured.
 
 ## CI and Release
 
-- Use Conventional Commits for every commit. Prefer a scope when it
-  adds clarity.
-- Never create, edit, or update `CHANGELOG.md` manually.
-- `CHANGELOG.md` is generated and maintained by release tooling only.
-- If release automation adds or changes generated files, let the
-  tooling own those updates.
+- `.github/workflows/docs.yml` deploys Pages on `main` and `master` pushes.
+- CI installs Zensical and runs `zensical build --clean`.
+- Use Conventional Commits with standalone, changelog-ready headers and
+  supplemental bodies. Select the type from the actual change impact.
+- Prefer amending small related corrections into the relevant current
+  branch commit when explicitly authorized and history is unpublished;
+  avoid unnecessary fixup or cleanup commits.
+- Never edit `CHANGELOG.md` manually; generated changelogs belong to
+  release tooling. No release filters are configured in this repository.
 
 ## Conventions
 
-- Use small, correct changes that fit the existing project structure.
-- Verify behavior from the actual codebase before documenting or
-  changing it.
-- Keep `AGENTS.md` as instructions, not as a changelog, diary, or work
-  log.
-- Do not add update notes, status logs, or change summaries to
-  `AGENTS.md`.
+- Keep the module sourceable; loading it must not perform an update.
+- Check failures explicitly so `if sup` callers also stop on errors.
+- Keep README and AGENTS changes in separate docs-only commits.
+- Agents must never read, create, edit, delete, move, stage, commit, or
+  otherwise touch `todo.txt`; only the user may modify it manually.
+- Keep instructions concise and free of update notes or work logs.
 
 ## Security and Compliance
 
 - Never commit secrets, credentials, tokens, or private keys.
-- Verify new dependencies, automation, and scripts before trusting
-  them.
+- Fetch installation content from the canonical GitHub URL, not local
+  branches or working-tree files.
+- Reject source symlinks and linked installation roots before copying.
+- Do not follow destination symlinks when overwriting approved paths.
 
 ## Dependencies and Services
 
-- Verification needed: document external services, databases, queues,
-  or storage when they are added.
-- Avoid assuming any third-party service exists until the repo proves
-  it.
+- `sup` uses <https://github.com/iop098321qwe/skills.git> over HTTPS.
+- rsync merges files without `--delete` and preserves executable modes.
+- Development uses Husky and commitlint from `package.json`.
+- Docs deployment uses Zensical and GitHub Pages.
 
 ## Troubleshooting
 
-- If repo behavior is unclear, inspect tracked files and git history
-  before making assumptions.
-- If a generated or managed file changes unexpectedly, verify which
-  tool owns it before editing.
+- A failed fetch must abort without falling back to stale local content.
+- For ambiguous discovery, place the intended checkout at the expected
+  path documented in `README.md`.
+- Resolve occupied clone paths, linked roots, source links, and file
+  conflicts before retrying. Copy failures may leave partial updates.
+- Edit root Markdown sources, not their `docs/` symlinks or generated site.
 
 ## Refining Existing AGENTS.md
 
-- Re-check every statement against the repository before keeping it.
-- Remove stale, duplicated, or vague guidance.
-- Replace placeholders with exact commands, paths, and verified
-  workflows.
-- Keep bullets short and easy for AI agents to scan.
-- Preserve this section order when improving the file.
+- Verify every statement against the repository before keeping it.
+- Remove stale, duplicated, or vague guidance and any update logs.
+- Replace placeholders with exact verified commands and paths.
+- Keep bullets short and preserve this section order.
+- Mark unverified claims with the exact verification still needed.
 
 ## Maintenance
 
-- After any code, config, or doc change, verify that `AGENTS.md` still
-  matches the repository.
-- When `AGENTS.md` needs an update, make it in a separate `docs`
-  Conventional Commit such as `docs(agents): update repo instructions`.
-- Keep `AGENTS.md` out of mixed code commits whenever possible.
-- Remove stale instructions instead of appending historical notes.
+- After code, configuration, or docs changes, compare this file with the
+  current source, tests, dependencies, and tracked file inventory.
+- Recheck commands, paths, runtime requirements, and automation.
+- Update mismatches in a separate docs Conventional Commit.
+- Preserve the user-only task-file rule; never append maintenance logs.
